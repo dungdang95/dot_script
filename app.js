@@ -15,9 +15,13 @@ app.post("/balance", async (req, res) => {
   (async () => {
     try {
       const data = req.body;
+   
       const wsProvider = new WsProvider(data.rpc);
+  
       const api = await ApiPromise.create({ provider: wsProvider });
+  
       const account = await api.query.system.account(data.address);
+    
       return { balance: account.data.free.toNumber() };
     } catch (error) {
       console.log("error", error);
@@ -38,7 +42,7 @@ app.post("/balance", async (req, res) => {
     });
 });
 
-app.post("/sweep-assll", async (req, res) => {
+app.post("/transfer", async (req, res) => {
   (async () => {
     try {
       const data = req.body;
@@ -66,6 +70,7 @@ app.post("/sweep-assll", async (req, res) => {
       res.json({ result, error: null });
     })
     .catch((error) => {
+      console.log("error", error);
       res.status(400).json({
         result: null,
         error,
@@ -77,17 +82,19 @@ app.post("/sweep-all", async (req, res) => {
   (async () => {
     try {
       const data = req.body;
-      console.log(data);
+      
       const wsProvider = new WsProvider(data.rpc);
       const api = await ApiPromise.create({ provider: wsProvider });
+      
       const keyring = new Keyring({ type: "sr25519" });
+   
       const from = keyring.addFromUri(data.from);
-      let balance = await api.query.system.account(from.address);
-      console.log(balance.data.free.toNumber());
+      const balance = await api.query.system.account(from.address);
+     
       const info = await api.tx.balances
         .transfer(data.to, balance.data.free.toNumber())
         .paymentInfo(from);
-      console.log(info);
+      
       const transfer = api.tx.balances.transfer(
         data.to,
         balance.data.free.toNumber() - info.partialFee.toNumber()
@@ -107,6 +114,7 @@ app.post("/sweep-all", async (req, res) => {
       res.json({ result, error: null });
     })
     .catch((error) => {
+      console.log("error", error);
       res.status(400).json({
         result: null,
         error,
